@@ -1,0 +1,8 @@
+# Per-project overlay for the skill — filled in locally, never committed.
+# Start from core/CUSTOMIZE.template.md.
+CUSTOMIZE.md
+
+# Editors
+.idea/
+.vscode/
+.DS_Store
