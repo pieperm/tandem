@@ -111,7 +111,7 @@ How to check the build for a specific SHA, if not `gh pr checks <n>`.
 ## Review lessons
 
 Accumulated mistakes worth not repeating — each one a wrong or missed review statement that
-actually shipped. The most valuable entries are *Not in this PR* claims that turned out to
+actually shipped. The most valuable entries are *Blast Radius* claims that turned out to
 be false, since a false entry costs the author more than a missed one.
 
 - **<ticket> — <one-line label>.** What was claimed, what was actually true, and the check

@@ -47,7 +47,7 @@ git fetch origin <headRefName>:refs/pr-review/pr<n> --force
 
 ### 2. Pull the ticket
 
-The ticket is what makes the *Not in this PR* section possible — without the intended scope you can only describe the diff, not judge it.
+The ticket is what makes the *Blast Radius* section possible — without the intended scope you can only describe the diff, not judge it.
 
 Resolve the key from the branch name or the commit subjects, using the pattern in the overlay. How you then read it depends on the project:
 
@@ -55,9 +55,9 @@ Resolve the key from the branch name or the commit subjects, using the pattern i
 - **Jira via MCP:** typically `jira_get_issue`, then `jira_list_comments` as a **separate call**. Always project the fields you need; unprojected issue payloads are enormous.
 - **No tracker reachable, or the key can't be resolved:** continue, and say in the document that scope was judged from the code alone.
 
-**Acceptance criteria are often not in the description.** They may live in a checklist app, a custom field, a task list in the PR body, or a linked doc. The overlay should say where; if it doesn't, find out once and offer to record it. **These are the section's most valuable input**: an unchecked criterion that the PR doesn't address is exactly a *Not in this PR* entry, sourced from the ticket rather than from your judgement.
+**Acceptance criteria are often not in the description.** They may live in a checklist app, a custom field, a task list in the PR body, or a linked doc. The overlay should say where; if it doesn't, find out once and offer to record it. **These are the section's most valuable input**: an unchecked criterion that the PR doesn't address is exactly a *Blast Radius* entry, sourced from the ticket rather than from your judgement.
 
-**A missing description is itself a finding.** If the ticket states no scope at all, the summary is the only statement of intent and *Not in this PR* rests entirely on your reading of the code. Say that explicitly rather than quietly reviewing as though the ticket had justified the scope, and note that defining "done" is outstanding.
+**A missing description is itself a finding.** If the ticket states no scope at all, the summary is the only statement of intent and *Blast Radius* rests entirely on your reading of the code. Say that explicitly rather than quietly reviewing as though the ticket had justified the scope, and note that defining "done" is outstanding.
 
 What to take from the ticket: the **stated problem**, the **acceptance criteria**, and whether **sibling tickets** already own work this PR omits. A deliberate omission tracked elsewhere is a note, not a defect — and only the tracker can tell you which it is. Carry the criteria into the review as the yardstick: for each unmet one, decide whether this PR delivers it, and if not, whether that's deferred or missed.
 
@@ -129,7 +129,7 @@ git show <ref>:<path> | grep -n '<declaration or signature>'
 
 A hunk that spans 80 lines usually contains several unrelated changes. Split it into one **Diff** block per idea rather than describing a hunk.
 
-### 8. Find what the PR did not touch
+### 8. Map the blast radius
 
 The diff tells you what changed. This step is how you find what *should* have. Work outward from each changed symbol — do this before writing, because it usually sends you back to read more code.
 
@@ -177,7 +177,7 @@ Do not check out the PR branch in the user's working copy. Read everything throu
 
 ## Format
 
-Files in reading order — root-cause change first, then what depends on it, then tests, then config, then noise commits. Not alphabetical, not diff order. *Not in this PR* comes after the last touched file and before the Summary, so the reader has the whole change in mind before being asked what's absent from it.
+Files in reading order — root-cause change first, then what depends on it, then tests, then config, then noise commits. Not alphabetical, not diff order. *Blast Radius* comes after the last touched file and before the Summary, so the reader has the whole change in mind before being asked what's absent from it.
 
 ### Naming a file section
 
@@ -195,7 +195,7 @@ Files in reading order — root-cause change first, then what depends on it, the
 | **Review date** | <YYYY-MM-DD> |
 | **CI** | <status> |
 | **Ticket** | [<TICKET>](<url>) — <summary> (<status>) |
-| **Acceptance criteria** | <progress, e.g. "1 of 6 met", or "none stated on the ticket" — see *Not in this PR*> |
+| **Acceptance criteria** | <progress, e.g. "1 of 6 met", or "none stated on the ticket" — see *Blast Radius*> |
 
 Line numbers refer to the file contents at `<short sha>`.
 
@@ -227,7 +227,7 @@ Line numbers refer to the file contents at `<short sha>`.
 
 ---
 
-## Not in this PR
+## Blast Radius
 
 <One line stating what the section covers and what it was judged against — the ticket's criteria, or the code alone if the ticket stated no scope.>
 
@@ -272,7 +272,7 @@ Line numbers refer to the file contents at `<short sha>`.
 - Tests get the same What/Why/Notes treatment. The most useful test note is a **gap** — the case the change motivated and nothing covers.
 - Keep History one line per commit, phrased as what it did to *that file*.
 
-For *Not in this PR* specifically:
+For *Blast Radius* specifically:
 
 - **Every entry names a real file or a quoted criterion**, never a category. "Error handling elsewhere may need updating" is not an entry; a named file with the consequence spelled out — which changed contract reaches it, and what now happens there — is.
 - **Always give the verdict.** Missed, deferred with the ticket key, or side-effect-no-action. An entry without one reads as an accusation and the author can't act on it.
@@ -290,7 +290,7 @@ Before presenting anything, create `reviews/<TICKET>/<sha>.md` containing only:
 
 - the completed header table and the "Line numbers refer to…" line
 - one heading per file, **in reading order**, named per *Naming a file section* above, each with its path line and then `<!-- pending -->`
-- empty `## Not in this PR` and `## Summary` headings
+- empty `## Blast Radius` and `## Summary` headings
 
 Two reasons this comes first: the reviewer can see the planned order and reorder it before you start, and an interrupted session leaves a valid partial document instead of nothing.
 
@@ -303,7 +303,7 @@ For each file in reading order:
 3. **Ask whether to move on.** A plain question is right here; `AskUserQuestion` on every file is heavy.
 4. **On confirmation, write that file's section** into the markdown, replacing its `<!-- pending -->` marker — including anything the conversation changed. Then move to the next file.
 
-After the last file, run the step 8 sweep and present *Not in this PR* for confirmation the same way, then the Summary.
+After the last file, run the step 8 sweep and present *Blast Radius* for confirmation the same way, then the Summary.
 
 ### Rules
 
@@ -331,7 +331,7 @@ Worth flagging to the overlay:
 - The tracker's API changing shape, or acceptance criteria moving somewhere else again.
 - A new class of noise commit that should be grouped rather than reviewed.
 - A new recurring bug shape worth adding to the step 8 sweeps.
-- A *Not in this PR* entry that turned out to be wrong. Those are worth recording as a review lesson, since a false entry costs the author more than a missed one.
+- A *Blast Radius* entry that turned out to be wrong. Those are worth recording as a review lesson, since a false entry costs the author more than a missed one.
 - A repeated review-writing mistake, for the same reason.
 
 Worth flagging to this file:
