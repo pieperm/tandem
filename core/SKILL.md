@@ -102,8 +102,16 @@ File list, and hunk headers carrying **new-file** line numbers:
 
 ```bash
 gh pr diff <n> --name-only
-gh pr diff <n> | awk '/^diff --git/{f=$3; sub("^a/","",f)} /^@@/{print f"  "$0}'
+gh pr diff <n> | awk '/^\+\+\+ /{f=substr($0,5); sub(/^b\//,"",f); sub(/\t.*$/,"",f)} /^@@/{print f"  "$0}'
 ```
+
+Track the file from the `+++` line, not from `diff --git`. The `diff --git a/x b/x` form
+needs field splitting to get the path, so `$3` truncates at the first space — a path like
+`my module/Thing.java` becomes `my` — and `$3` is the `a/` side, which names the *old* file
+and so mislabels every rename, exactly when the new-file line numbers matter most. The `+++`
+line has one path, taken as a substring rather than a field, so spaces survive; `b/` is
+stripped, a trailing tab (git appends one when the path contains spaces) is dropped, and
+deleted files fall out as `/dev/null`.
 
 Per-file history, oldest first:
 
