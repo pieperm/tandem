@@ -179,6 +179,12 @@ Do not check out the PR branch in the user's working copy. Read everything throu
 
 Files in reading order — root-cause change first, then what depends on it, then tests, then config, then noise commits. Not alphabetical, not diff order. *Not in this PR* comes after the last touched file and before the Summary, so the reader has the whole change in mind before being asked what's absent from it.
 
+### Naming a file section
+
+**The heading is the file name, not the path.** The path is repeated clutter in a document where the file name is the thing being discussed; the full path goes on the line below, where it's available without competing for attention.
+
+**Add path segments only to break a tie.** If two or more files *in this diff* share a name, take segments from the right until each is unique — `build.gradle` appearing twice becomes `api/build.gradle` and `worker/build.gradle`, not the full paths. Only the colliding files get lengthened; everything else stays bare. Judge collisions against the diff's file list, not the whole repo: a `MyFile.java` that appears once in the PR needs no qualification even if the repo holds five.
+
 ````markdown
 # <TICKET> — <short change title>
 
@@ -195,7 +201,9 @@ Line numbers refer to the file contents at `<short sha>`.
 
 ---
 
-## `path/to/changed_file`
+## `ChangedFile.java`
+
+*`path/to/ChangedFile.java`*
 
 **Diff: Lines X–Y**
 
@@ -223,7 +231,9 @@ Line numbers refer to the file contents at `<short sha>`.
 
 <One line stating what the section covers and what it was judged against — the ticket's criteria, or the code alone if the ticket stated no scope.>
 
-### `path/to/untouched_file`
+### `UntouchedFile.java`
+
+*`path/to/UntouchedFile.java`*
 
 **Why it's affected:** <the concrete consequence — which changed contract or pattern reaches this file, and what happens there now>
 
@@ -279,7 +289,7 @@ Same document, built one file at a time. The reviewer's questions are part of th
 Before presenting anything, create `reviews/<TICKET>/<sha>.md` containing only:
 
 - the completed header table and the "Line numbers refer to…" line
-- one `## <path>` heading per file, **in reading order**, each followed by `<!-- pending -->`
+- one heading per file, **in reading order**, named per *Naming a file section* above, each with its path line and then `<!-- pending -->`
 - empty `## Not in this PR` and `## Summary` headings
 
 Two reasons this comes first: the reviewer can see the planned order and reorder it before you start, and an interrupted session leaves a valid partial document instead of nothing.
