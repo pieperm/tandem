@@ -207,7 +207,18 @@ Give imports their own section only when the imports themselves are the story:
 
 **Each diff is its own `###` heading, titled with its line range.** Everything under that heading belongs to that diff and nothing else — What, Why, and any notes about it. The heading is the group boundary, and it's what lets a reader tell at a glance where one explanation ends and the next begins.
 
-**File-level Notes and History are `###` headings too**, siblings of the diffs rather than trailing paragraphs. Left unlabelled at the end, they read as belonging to the last diff — the exact confusion this structure exists to prevent. A note about one diff goes under that diff; only what's true of the file as a whole goes in *Notes — whole file*.
+**File-level Notes and History are `###` headings too**, siblings of the diffs rather than trailing paragraphs. Left unlabelled at the end, they read as belonging to the last diff — the exact confusion this structure exists to prevent.
+
+**A note goes under the diff it's about. That's the default, not the alternative.** Collecting notes into one list at the end of the file makes the reader re-derive which note went with which change, which is work they shouldn't have to do and can't always do correctly. The test is mechanical: if the note concerns lines inside one diff's range, it belongs to that diff.
+
+*General Notes* holds what's left after that routing, not whatever hasn't been filed yet. Despite the name it is not a catch-all, and it should be short — four kinds of note belong there:
+
+- commentary on the file itself — its role, structure, naming, or whether it should exist
+- something true of several diffs at once, stated once here rather than repeated under each
+- a gap: a test, doc, or case the file needed and doesn't have
+- anything with no diff to attach it to, including observations about parts of the file the PR didn't touch
+
+If a note would fit under two diffs, that's the signal it's file-level. State it once here; don't copy it under both.
 
 **Don't number the diffs.** Line ranges already order themselves, and ordinals would have to be renumbered every time a diff is inserted or split.
 
@@ -245,7 +256,7 @@ Line numbers refer to the file contents at `<short sha>`.
 
 **Why:** ...
 
-### Notes — whole file
+### General Notes
 
 - <only what applies to the file rather than to one diff — omit the section entirely if there is nothing>
 
@@ -292,7 +303,7 @@ Line numbers refer to the file contents at `<short sha>`.
 ## Writing rules
 
 - **What is mechanical, Why is the reason.** If Why restates What in different words, delete it and find the actual motivation — usually the failure being prevented.
-- **Notes are optional at both levels.** A clean diff gets no bullets and a clean file gets no *Notes — whole file* section. Padding every diff with a nit trains the reader to skim.
+- **Notes are optional at both levels.** A clean diff gets no bullets and a clean file gets no *General Notes* section. Padding every diff with a nit trains the reader to skim.
 - Notes carry the defects. State the failure concretely — inputs, then wrong outcome. "Could be racy" is not a note; "two callers both holding token X evict each other's replacement, so one 401 becomes N logins" is.
 - **Say when something is good.** A review that only lists problems misrepresents the change and is less useful to the author.
 - Call out an issue that a *later commit in the same PR* already fixed only when the reader would otherwise raise it. Then name the fixing commit.
