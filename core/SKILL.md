@@ -127,7 +127,7 @@ Hunk headers give you a starting point; anchor the real ranges by reading the fi
 git show <ref>:<path> | grep -n '<declaration or signature>'
 ```
 
-A hunk that spans 80 lines usually contains several unrelated changes. Split it into one **Diff** block per idea rather than describing a hunk.
+A hunk that spans 80 lines usually contains several unrelated changes. Give each idea its own `### Lines X–Y` section rather than describing the hunk as one thing — the split ranges don't have to be contiguous with each other, and a hunk that becomes three sections is a normal outcome.
 
 ### 8. Map the blast radius
 
@@ -185,6 +185,14 @@ Files in reading order — root-cause change first, then what depends on it, the
 
 **Add path segments only to break a tie.** If two or more files *in this diff* share a name, take segments from the right until each is unique — `build.gradle` appearing twice becomes `api/build.gradle` and `worker/build.gradle`, not the full paths. Only the colliding files get lengthened; everything else stays bare. Judge collisions against the diff's file list, not the whole repo: a `MyFile.java` that appears once in the PR needs no qualification even if the repo holds five.
 
+### Grouping the diffs within a file
+
+**Each diff is its own `###` heading, titled with its line range.** Everything under that heading belongs to that diff and nothing else — What, Why, and any notes about it. The heading is the group boundary, and it's what lets a reader tell at a glance where one explanation ends and the next begins.
+
+**File-level Notes and History are `###` headings too**, siblings of the diffs rather than trailing paragraphs. Left unlabelled at the end, they read as belonging to the last diff — the exact confusion this structure exists to prevent. A note about one diff goes under that diff; only what's true of the file as a whole goes in *Notes — whole file*.
+
+**Don't number the diffs.** Line ranges already order themselves, and ordinals would have to be renumbered every time a diff is inserted or split.
+
 ````markdown
 # <TICKET> — <short change title>
 
@@ -205,23 +213,25 @@ Line numbers refer to the file contents at `<short sha>`.
 
 *`path/to/ChangedFile.java`*
 
-**Diff: Lines X–Y**
+### Lines X–Y
 
 **What:** <the change, in mechanical terms — what the code does now that it didn't before>
 
 **Why:** <the reason it exists; the failure it prevents or the constraint it satisfies>
 
-**Diff: Lines X–Y**
+- <a note about this diff: feedback, defect, risk, or something a future reader needs>
+
+### Lines X–Y
 
 **What:** ...
 
 **Why:** ...
 
-**Notes:**
+### Notes — whole file
 
-- <feedback, defect, risk, or something a future reader needs — omit the section entirely if there is nothing>
+- <only what applies to the file rather than to one diff — omit the section entirely if there is nothing>
 
-**History:**
+### History
 
 - `<sha>` <one line: what this commit did to this file>
 
@@ -264,7 +274,7 @@ Line numbers refer to the file contents at `<short sha>`.
 ## Writing rules
 
 - **What is mechanical, Why is the reason.** If Why restates What in different words, delete it and find the actual motivation — usually the failure being prevented.
-- **Notes is optional.** A clean file gets "None" or no section. Padding every file with a nit trains the reader to skim.
+- **Notes are optional at both levels.** A clean diff gets no bullets and a clean file gets no *Notes — whole file* section. Padding every diff with a nit trains the reader to skim.
 - Notes carry the defects. State the failure concretely — inputs, then wrong outcome. "Could be racy" is not a note; "two callers both holding token X evict each other's replacement, so one 401 becomes N logins" is.
 - **Say when something is good.** A review that only lists problems misrepresents the change and is less useful to the author.
 - Call out an issue that a *later commit in the same PR* already fixed only when the reader would otherwise raise it. Then name the fixing commit.
@@ -298,7 +308,7 @@ Two reasons this comes first: the reviewer can see the planned order and reorder
 
 For each file in reading order:
 
-1. **Present the review in chat** — the same Diff/What/Why blocks, Notes and History the report would contain. Do **not** write it to the file yet.
+1. **Present the review in chat** — the same per-diff sections, Notes and History the report would contain. Do **not** write it to the file yet.
 2. **Invite questions, and answer them properly.** "How does this work" and "why was it done this way" are the point of this mode. Read whatever it takes — the commit that introduced the line, a caller two files away, the test that pins it. Answer at the depth asked, in chat.
 3. **Ask whether to move on.** A plain question is right here; `AskUserQuestion` on every file is heavy.
 4. **On confirmation, write that file's section** into the markdown, replacing its `<!-- pending -->` marker — including anything the conversation changed. Then move to the next file.
