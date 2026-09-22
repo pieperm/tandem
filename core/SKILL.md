@@ -193,6 +193,18 @@ Files in reading order — root-cause change first, then what depends on it, the
 
 **The exception is a change that repeats.** When the same mechanical edit lands in many declarations — a rename applied throughout, a signature updated at every call site, a formatting pass — one section covering the group says more than twenty near-identical ones. Give the range, say how many declarations it covers, and call out anything that varies between them.
 
+**Imports get no section.** An import block is its own hunk in nearly every diff, so reporting it adds a paragraph per file that says only what the code using it already says. Skip it. Whatever the new dependency enables belongs in the section for the change that needed it, not in a section of its own.
+
+Read them regardless — the import list is the fastest way to see what a file now depends on, and it often points at the callers and layers worth checking in step 8. It's evidence, not a finding.
+
+Give imports their own section only when the imports themselves are the story:
+
+- a dependency the module didn't have before, especially a third-party one
+- an import that crosses a layer or module boundary the codebase deliberately keeps apart
+- the wrong one of two similarly named types — `java.sql.Date` for `java.util.Date`, `javax.*` in a project that has moved to `jakarta.*`
+- a wildcard import where the convention is explicit ones, or a static import that hides where a name came from
+- an import left behind for something this PR deleted
+
 **Each diff is its own `###` heading, titled with its line range.** Everything under that heading belongs to that diff and nothing else — What, Why, and any notes about it. The heading is the group boundary, and it's what lets a reader tell at a glance where one explanation ends and the next begins.
 
 **File-level Notes and History are `###` headings too**, siblings of the diffs rather than trailing paragraphs. Left unlabelled at the end, they read as belonging to the last diff — the exact confusion this structure exists to prevent. A note about one diff goes under that diff; only what's true of the file as a whole goes in *Notes — whole file*.
