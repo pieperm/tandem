@@ -127,7 +127,7 @@ Hunk headers give you a starting point; anchor the real ranges by reading the fi
 git show <ref>:<path> | grep -n '<declaration or signature>'
 ```
 
-A hunk that spans 80 lines usually contains several unrelated changes. Give each idea its own `### Lines X–Y` section rather than describing the hunk as one thing — the split ranges don't have to be contiguous with each other, and a hunk that becomes three sections is a normal outcome.
+**The hunk is not the unit of review.** A hunk that spans 80 lines usually crosses several declarations and contains several unrelated changes; one hunk routinely becomes three or four sections. Grep the head file for the declarations the hunk covers — that's what gives you the ranges to split on. See *Grouping the diffs within a file* for where the boundaries fall.
 
 ### 8. Map the blast radius
 
@@ -186,6 +186,12 @@ Files in reading order — root-cause change first, then what depends on it, the
 **Add path segments only to break a tie.** If two or more files *in this diff* share a name, take segments from the right until each is unique — `build.gradle` appearing twice becomes `api/build.gradle` and `worker/build.gradle`, not the full paths. Only the colliding files get lengthened; everything else stays bare. Judge collisions against the diff's file list, not the whole repo: a `MyFile.java` that appears once in the PR needs no qualification even if the repo holds five.
 
 ### Grouping the diffs within a file
+
+**One diff section per declaration.** A hunk that touches three methods is three sections, not one — split at the declaration boundaries even when the changed lines are contiguous. A reader assesses one method at a time, and a single What/Why stretched over three of them has to generalize, which makes the explanation vague exactly where it should be specific. *Declaration* is the named thing the diff sits in: a method, a class, a field, an enum constant, a top-level function.
+
+**A declaration is the ceiling, not the floor.** Two unrelated changes inside one method are still two sections. The rule caps how much a section may cover; it doesn't stop you splitting finer.
+
+**The exception is a change that repeats.** When the same mechanical edit lands in many declarations — a rename applied throughout, a signature updated at every call site, a formatting pass — one section covering the group says more than twenty near-identical ones. Give the range, say how many declarations it covers, and call out anything that varies between them.
 
 **Each diff is its own `###` heading, titled with its line range.** Everything under that heading belongs to that diff and nothing else — What, Why, and any notes about it. The heading is the group boundary, and it's what lets a reader tell at a glance where one explanation ends and the next begins.
 
