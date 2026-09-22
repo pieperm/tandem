@@ -292,7 +292,10 @@ Line numbers refer to the file contents at `<short sha>`.
 
 ## Summary
 
-<Ranked list of what to act on, most significant first, each naming file:line.>
+Most significant first.
+
+- `[<slug>]` <what to act on> — `<File.java>:<line>`
+- `[<slug>]` <...> — `<File.java>:<line>`
 
 ### Commit history for this review
 
@@ -310,6 +313,16 @@ Line numbers refer to the file contents at `<short sha>`.
 - Distinguish "the code is wrong" from "the comment is wrong" from "the test doesn't prove what it claims". These need different fixes and reviewers routinely conflate them.
 - Tests get the same What/Why/Notes treatment. The most useful test note is a **gap** — the case the change motivated and nothing covers.
 - Keep History one line per commit, phrased as what it did to *that file*.
+
+### Referring to Summary entries
+
+Summary entries are the one list in the document that gets a handle, because they're the list that gets reordered, reworded and cited. Every other list stays plain bullets.
+
+- **Each entry opens with a slug in backticks**, kebab-case, one to three words taken from the finding itself: `[token-reuse]`, `[swallowed-401]`, `[missing-retry-test]`. It has to be readable on its own — the point is that citing it conveys which finding is meant without a lookup.
+- **Never number the entries.** Rank is carried by position alone, so inserting a finding is one line added and nothing else touched. Renumbering is the cost this exists to remove; reintroducing ordinals anywhere in the Summary brings it straight back.
+- **A slug is fixed once written.** Reword the entry, move it up the ranking, move it between sections — the slug does not change, because anything already citing it in chat, in the PR, or in another file would break. Wrong-but-stable beats accurate-but-moving.
+- **Never reuse a slug**, including for a finding that was removed. Unique within the document.
+- When the reviewer cites a slug, grep for it rather than scrolling — each mention is one hit.
 
 For *Blast Radius* specifically:
 
