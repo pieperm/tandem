@@ -47,7 +47,7 @@ git fetch origin <headRefName>:refs/pr-review/pr<n> --force
 
 ### 2. Pull the ticket
 
-The ticket is what makes the *Not in this PR* section possible — without the intended scope you can only describe the diff, not judge it.
+The ticket is what makes the *Blast Radius* section possible — without the intended scope you can only describe the diff, not judge it.
 
 Resolve the key from the branch name or the commit subjects, using the pattern in the overlay. How you then read it depends on the project:
 
@@ -55,9 +55,9 @@ Resolve the key from the branch name or the commit subjects, using the pattern i
 - **Jira via MCP:** typically `jira_get_issue`, then `jira_list_comments` as a **separate call**. Always project the fields you need; unprojected issue payloads are enormous.
 - **No tracker reachable, or the key can't be resolved:** continue, and say in the document that scope was judged from the code alone.
 
-**Acceptance criteria are often not in the description.** They may live in a checklist app, a custom field, a task list in the PR body, or a linked doc. The overlay should say where; if it doesn't, find out once and offer to record it. **These are the section's most valuable input**: an unchecked criterion that the PR doesn't address is exactly a *Not in this PR* entry, sourced from the ticket rather than from your judgement.
+**Acceptance criteria are often not in the description.** They may live in a checklist app, a custom field, a task list in the PR body, or a linked doc. The overlay should say where; if it doesn't, find out once and offer to record it. **These are the section's most valuable input**: an unchecked criterion that the PR doesn't address is exactly a *Blast Radius* entry, sourced from the ticket rather than from your judgement.
 
-**A missing description is itself a finding.** If the ticket states no scope at all, the summary is the only statement of intent and *Not in this PR* rests entirely on your reading of the code. Say that explicitly rather than quietly reviewing as though the ticket had justified the scope, and note that defining "done" is outstanding.
+**A missing description is itself a finding.** If the ticket states no scope at all, the summary is the only statement of intent and *Blast Radius* rests entirely on your reading of the code. Say that explicitly rather than quietly reviewing as though the ticket had justified the scope, and note that defining "done" is outstanding.
 
 What to take from the ticket: the **stated problem**, the **acceptance criteria**, and whether **sibling tickets** already own work this PR omits. A deliberate omission tracked elsewhere is a note, not a defect — and only the tracker can tell you which it is. Carry the criteria into the review as the yardstick: for each unmet one, decide whether this PR delivers it, and if not, whether that's deferred or missed.
 
@@ -102,8 +102,16 @@ File list, and hunk headers carrying **new-file** line numbers:
 
 ```bash
 gh pr diff <n> --name-only
-gh pr diff <n> | awk '/^diff --git/{f=$3; sub("^a/","",f)} /^@@/{print f"  "$0}'
+gh pr diff <n> | awk '/^\+\+\+ /{f=substr($0,5); sub(/^b\//,"",f); sub(/\t.*$/,"",f)} /^@@/{print f"  "$0}'
 ```
+
+Track the file from the `+++` line, not from `diff --git`. The `diff --git a/x b/x` form
+needs field splitting to get the path, so `$3` truncates at the first space — a path like
+`my module/Thing.java` becomes `my` — and `$3` is the `a/` side, which names the *old* file
+and so mislabels every rename, exactly when the new-file line numbers matter most. The `+++`
+line has one path, taken as a substring rather than a field, so spaces survive; `b/` is
+stripped, a trailing tab (git appends one when the path contains spaces) is dropped, and
+deleted files fall out as `/dev/null`.
 
 Per-file history, oldest first:
 
@@ -119,9 +127,9 @@ Hunk headers give you a starting point; anchor the real ranges by reading the fi
 git show <ref>:<path> | grep -n '<declaration or signature>'
 ```
 
-A hunk that spans 80 lines usually contains several unrelated changes. Split it into one **Diff** block per idea rather than describing a hunk.
+**The hunk is not the unit of review.** A hunk that spans 80 lines usually crosses several declarations and contains several unrelated changes; one hunk routinely becomes three or four sections. Grep the head file for the declarations the hunk covers — that's what gives you the ranges to split on. See *Grouping the diffs within a file* for where the boundaries fall.
 
-### 8. Find what the PR did not touch
+### 8. Map the blast radius
 
 The diff tells you what changed. This step is how you find what *should* have. Work outward from each changed symbol — do this before writing, because it usually sends you back to read more code.
 
@@ -169,7 +177,50 @@ Do not check out the PR branch in the user's working copy. Read everything throu
 
 ## Format
 
-Files in reading order — root-cause change first, then what depends on it, then tests, then config, then noise commits. Not alphabetical, not diff order. *Not in this PR* comes after the last touched file and before the Summary, so the reader has the whole change in mind before being asked what's absent from it.
+Files in reading order — root-cause change first, then what depends on it, then tests, then config, then noise commits. Not alphabetical, not diff order. *Blast Radius* comes after the last touched file and before the Summary, so the reader has the whole change in mind before being asked what's absent from it.
+
+### Naming a file section
+
+**The heading is the file name, not the path.** The path is repeated clutter in a document where the file name is the thing being discussed; the full path goes on the line below, where it's available without competing for attention.
+
+**Add path segments only to break a tie.** If two or more files *in this diff* share a name, take segments from the right until each is unique — `build.gradle` appearing twice becomes `api/build.gradle` and `worker/build.gradle`, not the full paths. Only the colliding files get lengthened; everything else stays bare. Judge collisions against the diff's file list, not the whole repo: a `MyFile.java` that appears once in the PR needs no qualification even if the repo holds five.
+
+### Grouping the diffs within a file
+
+**One diff section per declaration.** A hunk that touches three methods is three sections, not one — split at the declaration boundaries even when the changed lines are contiguous. A reader assesses one method at a time, and a single What/Why stretched over three of them has to generalize, which makes the explanation vague exactly where it should be specific. *Declaration* is the named thing the diff sits in: a method, a class, a field, an enum constant, a top-level function.
+
+**A declaration is the ceiling, not the floor.** Two unrelated changes inside one method are still two sections. The rule caps how much a section may cover; it doesn't stop you splitting finer.
+
+**The exception is a change that repeats.** When the same mechanical edit lands in many declarations — a rename applied throughout, a signature updated at every call site, a formatting pass — one section covering the group says more than twenty near-identical ones. Give the range, say how many declarations it covers, and call out anything that varies between them.
+
+**Imports get no section.** An import block is its own hunk in nearly every diff, so reporting it adds a paragraph per file that says only what the code using it already says. Skip it. Whatever the new dependency enables belongs in the section for the change that needed it, not in a section of its own.
+
+Read them regardless — the import list is the fastest way to see what a file now depends on, and it often points at the callers and layers worth checking in step 8. It's evidence, not a finding.
+
+Give imports their own section only when the imports themselves are the story:
+
+- a dependency the module didn't have before, especially a third-party one
+- an import that crosses a layer or module boundary the codebase deliberately keeps apart
+- the wrong one of two similarly named types — `java.sql.Date` for `java.util.Date`, `javax.*` in a project that has moved to `jakarta.*`
+- a wildcard import where the convention is explicit ones, or a static import that hides where a name came from
+- an import left behind for something this PR deleted
+
+**Each diff is its own `###` heading, titled with its line range.** Everything under that heading belongs to that diff and nothing else — What, Why, and any notes about it. The heading is the group boundary, and it's what lets a reader tell at a glance where one explanation ends and the next begins.
+
+**File-level Notes and History are `###` headings too**, siblings of the diffs rather than trailing paragraphs. Left unlabelled at the end, they read as belonging to the last diff — the exact confusion this structure exists to prevent.
+
+**A note goes under the diff it's about. That's the default, not the alternative.** Collecting notes into one list at the end of the file makes the reader re-derive which note went with which change, which is work they shouldn't have to do and can't always do correctly. The test is mechanical: if the note concerns lines inside one diff's range, it belongs to that diff.
+
+*General Notes* holds what's left after that routing, not whatever hasn't been filed yet. Despite the name it is not a catch-all, and it should be short — four kinds of note belong there:
+
+- commentary on the file itself — its role, structure, naming, or whether it should exist
+- something true of several diffs at once, stated once here rather than repeated under each
+- a gap: a test, doc, or case the file needed and doesn't have
+- anything with no diff to attach it to, including observations about parts of the file the PR didn't touch
+
+If a note would fit under two diffs, that's the signal it's file-level. State it once here; don't copy it under both.
+
+**Don't number the diffs.** Line ranges already order themselves, and ordinals would have to be renumbered every time a diff is inserted or split.
 
 ````markdown
 # <TICKET> — <short change title>
@@ -181,41 +232,47 @@ Files in reading order — root-cause change first, then what depends on it, the
 | **Review date** | <YYYY-MM-DD> |
 | **CI** | <status> |
 | **Ticket** | [<TICKET>](<url>) — <summary> (<status>) |
-| **Acceptance criteria** | <progress, e.g. "1 of 6 met", or "none stated on the ticket" — see *Not in this PR*> |
+| **Acceptance criteria** | <progress, e.g. "1 of 6 met", or "none stated on the ticket" — see *Blast Radius*> |
 
 Line numbers refer to the file contents at `<short sha>`.
 
 ---
 
-## `path/to/changed_file`
+## `ChangedFile.java`
 
-**Diff: Lines X–Y**
+*`path/to/ChangedFile.java`*
+
+### Lines X–Y
 
 **What:** <the change, in mechanical terms — what the code does now that it didn't before>
 
 **Why:** <the reason it exists; the failure it prevents or the constraint it satisfies>
 
-**Diff: Lines X–Y**
+- <a note about this diff: feedback, defect, risk, or something a future reader needs>
+
+### Lines X–Y
 
 **What:** ...
 
 **Why:** ...
 
-**Notes:**
+### General Notes
 
-- <feedback, defect, risk, or something a future reader needs — omit the section entirely if there is nothing>
+- <only what applies to the file rather than to one diff — omit the section entirely if there is nothing>
 
-**History:**
+### History
 
 - `<sha>` <one line: what this commit did to this file>
 
 ---
 
-## Not in this PR
+## Blast Radius
 
 <One line stating what the section covers and what it was judged against — the ticket's criteria, or the code alone if the ticket stated no scope.>
 
-### `path/to/untouched_file`
+### `UntouchedFile.java`
+
+*`path/to/UntouchedFile.java`*
 
 **Why it's affected:** <the concrete consequence — which changed contract or pattern reaches this file, and what happens there now>
 
@@ -235,7 +292,10 @@ Line numbers refer to the file contents at `<short sha>`.
 
 ## Summary
 
-<Ranked list of what to act on, most significant first, each naming file:line.>
+Most significant first.
+
+- `[<slug>]` <what to act on> — `<File.java>:<line>`
+- `[<slug>]` <...> — `<File.java>:<line>`
 
 ### Commit history for this review
 
@@ -246,7 +306,7 @@ Line numbers refer to the file contents at `<short sha>`.
 ## Writing rules
 
 - **What is mechanical, Why is the reason.** If Why restates What in different words, delete it and find the actual motivation — usually the failure being prevented.
-- **Notes is optional.** A clean file gets "None" or no section. Padding every file with a nit trains the reader to skim.
+- **Notes are optional at both levels.** A clean diff gets no bullets and a clean file gets no *General Notes* section. Padding every diff with a nit trains the reader to skim.
 - Notes carry the defects. State the failure concretely — inputs, then wrong outcome. "Could be racy" is not a note; "two callers both holding token X evict each other's replacement, so one 401 becomes N logins" is.
 - **Say when something is good.** A review that only lists problems misrepresents the change and is less useful to the author.
 - Call out an issue that a *later commit in the same PR* already fixed only when the reader would otherwise raise it. Then name the fixing commit.
@@ -254,7 +314,17 @@ Line numbers refer to the file contents at `<short sha>`.
 - Tests get the same What/Why/Notes treatment. The most useful test note is a **gap** — the case the change motivated and nothing covers.
 - Keep History one line per commit, phrased as what it did to *that file*.
 
-For *Not in this PR* specifically:
+### Referring to Summary entries
+
+Summary entries are the one list in the document that gets a handle, because they're the list that gets reordered, reworded and cited. Every other list stays plain bullets.
+
+- **Each entry opens with a slug in backticks**, kebab-case, one to three words taken from the finding itself: `[token-reuse]`, `[swallowed-401]`, `[missing-retry-test]`. It has to be readable on its own — the point is that citing it conveys which finding is meant without a lookup.
+- **Never number the entries.** Rank is carried by position alone, so inserting a finding is one line added and nothing else touched. Renumbering is the cost this exists to remove; reintroducing ordinals anywhere in the Summary brings it straight back.
+- **A slug is fixed once written.** Reword the entry, move it up the ranking, move it between sections — the slug does not change, because anything already citing it in chat, in the PR, or in another file would break. Wrong-but-stable beats accurate-but-moving.
+- **Never reuse a slug**, including for a finding that was removed. Unique within the document.
+- When the reviewer cites a slug, grep for it rather than scrolling — each mention is one hit.
+
+For *Blast Radius* specifically:
 
 - **Every entry names a real file or a quoted criterion**, never a category. "Error handling elsewhere may need updating" is not an entry; a named file with the consequence spelled out — which changed contract reaches it, and what now happens there — is.
 - **Always give the verdict.** Missed, deferred with the ticket key, or side-effect-no-action. An entry without one reads as an accusation and the author can't act on it.
@@ -271,8 +341,8 @@ Same document, built one file at a time. The reviewer's questions are part of th
 Before presenting anything, create `reviews/<TICKET>/<sha>.md` containing only:
 
 - the completed header table and the "Line numbers refer to…" line
-- one `## <path>` heading per file, **in reading order**, each followed by `<!-- pending -->`
-- empty `## Not in this PR` and `## Summary` headings
+- one heading per file, **in reading order**, named per *Naming a file section* above, each with its path line and then `<!-- pending -->`
+- empty `## Blast Radius` and `## Summary` headings
 
 Two reasons this comes first: the reviewer can see the planned order and reorder it before you start, and an interrupted session leaves a valid partial document instead of nothing.
 
@@ -280,12 +350,12 @@ Two reasons this comes first: the reviewer can see the planned order and reorder
 
 For each file in reading order:
 
-1. **Present the review in chat** — the same Diff/What/Why blocks, Notes and History the report would contain. Do **not** write it to the file yet.
+1. **Present the review in chat** — the same per-diff sections, Notes and History the report would contain. Do **not** write it to the file yet.
 2. **Invite questions, and answer them properly.** "How does this work" and "why was it done this way" are the point of this mode. Read whatever it takes — the commit that introduced the line, a caller two files away, the test that pins it. Answer at the depth asked, in chat.
 3. **Ask whether to move on.** A plain question is right here; `AskUserQuestion` on every file is heavy.
 4. **On confirmation, write that file's section** into the markdown, replacing its `<!-- pending -->` marker — including anything the conversation changed. Then move to the next file.
 
-After the last file, run the step 8 sweep and present *Not in this PR* for confirmation the same way, then the Summary.
+After the last file, run the step 8 sweep and present *Blast Radius* for confirmation the same way, then the Summary.
 
 ### Rules
 
@@ -313,7 +383,7 @@ Worth flagging to the overlay:
 - The tracker's API changing shape, or acceptance criteria moving somewhere else again.
 - A new class of noise commit that should be grouped rather than reviewed.
 - A new recurring bug shape worth adding to the step 8 sweeps.
-- A *Not in this PR* entry that turned out to be wrong. Those are worth recording as a review lesson, since a false entry costs the author more than a missed one.
+- A *Blast Radius* entry that turned out to be wrong. Those are worth recording as a review lesson, since a false entry costs the author more than a missed one.
 - A repeated review-writing mistake, for the same reason.
 
 Worth flagging to this file:
